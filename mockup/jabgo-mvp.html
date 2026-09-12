@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>잡고(JABGO) MVP — 홍등 컨셉 인터랙티브 목업</title>
+<style>
+  /* ============ 리셋 & 무대 ============ */
+  * { margin:0; padding:0; box-sizing:border-box; }
+  :root {
+    --red:#B03028; --red-deep:#7E1F1B; --red-dark:#4A100E;
+    --gold:#D8A237; --gold-soft:#F7DFA8; --gold-pale:#F3E2C8;
+    --cream:#FBF4E8; --paper:#FFFCF4;
+    --ink:#3A1210; --brown:#6B4A28; --sub:#9A8468;
+    --line:#EAD9BE; --green:#2F7E6D;
+  }
+  body {
+    font-family:"Apple SD Gothic Neo","Pretendard","Noto Sans KR",system-ui,sans-serif;
+    background:
+      radial-gradient(900px 500px at 70% -10%, #6E2B24 0%, transparent 60%),
+      linear-gradient(165deg,#3C0F0C 0%,#240806 100%);
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    padding:28px; color:var(--cream);
+  }
+  .stage { display:flex; gap:44px; align-items:center; }
+  .stage-note { max-width:270px; }
+  .stage-note h1 { font-size:22px; line-height:1.4; margin:10px 0; font-weight:900; color:#F7DFA8; }
+  .stage-note p { font-size:13px; line-height:1.75; opacity:.8; }
+  .stage-note .tag { display:inline-block; margin-top:14px; font-size:11px; letter-spacing:.16em;
+    border:1px solid var(--gold); color:var(--gold); padding:5px 12px; border-radius:999px; }
+  .retro-label { display:inline-flex; font-size:11px; font-weight:800; letter-spacing:.22em;
+    color:var(--gold); border:1px solid var(--gold); padding:4px 10px; border-radius:4px; }
+
+  /* ============ 폰 프레임 ============ */
+  .phone { width:390px; height:844px; background:#160504; border-radius:54px; padding:14px;
+    box-shadow:0 40px 90px rgba(0,0,0,.6), inset 0 0 0 2px #3d1512; position:relative; flex-shrink:0; }
+  .phone::before { content:""; position:absolute; top:26px; left:50%; transform:translateX(-50%);
+    width:120px; height:28px; background:#160504; border-radius:16px; z-index:60; }
+  .viewport { width:100%; height:100%; border-radius:42px; overflow:hidden; background:var(--cream); position:relative; }
+
+  /* ============ 공통 ============ */
+  .screen { position:absolute; inset:0; display:none; flex-direction:column; overflow-y:auto; color:var(--ink); }
+  .screen.active { display:flex; animation:fadein .28s ease; }
+  @keyframes fadein { from{opacity:0; transform:translateX(12px);} to{opacity:1; transform:none;} }
+  .px { padding-left:20px; padding-right:20px; }
+  button { font-family:inherit; cursor:pointer; border:none; }
+
+  .btn { display:block; width:100%; padding:16px; border-radius:14px; font-size:15.5px; font-weight:800;
+    background:linear-gradient(160deg,#C43A31,var(--red) 55%,#8E241E); color:#FBEbd0; color:#FBEBD0;
+    box-shadow:0 4px 0 #5E1713, 0 10px 22px rgba(126,31,27,.28); transition:transform .08s ease, box-shadow .08s ease; }
+  .btn:active { transform:translateY(3px); box-shadow:0 1px 0 #5E1713, 0 5px 12px rgba(126,31,27,.25); }
+  .btn.gold { background:linear-gradient(160deg,#EFC15C,var(--gold) 55%,#A87B1C); color:#4A3208; box-shadow:0 4px 0 #7C5A12, 0 10px 22px rgba(216,162,55,.3); }
+  .btn.gold:active { box-shadow:0 1px 0 #7C5A12, 0 5px 12px rgba(216,162,55,.25); }
+  .btn.ghost { background:transparent; color:var(--brown); box-shadow:inset 0 0 0 1.5px var(--line); font-weight:700; }
+  .btn.ghost:active { transform:scale(.98); }
+  .btn[disabled] { background:#DDD2BE; color:#A69B85; box-shadow:0 4px 0 #BFB29A; cursor:not-allowed; }
+
+  .appbar { position:sticky; top:0; z-index:10; display:flex; align-items:center; gap:10px;
+    padding:60px 20px 12px; background:linear-gradient(var(--cream) 72%, transparent); }
+  .appbar .back { width:38px; height:38px; border-radius:50%; background:#fff; color:var(--red-deep);
+    font-size:19px; box-shadow:inset 0 0 0 1.5px var(--line); flex-shrink:0; }
+  .appbar h2 { font-size:17px; font-weight:900; }
+
+  /* HUD: 레벨 + XP */
+  .hud { margin-left:auto; display:flex; align-items:center; gap:8px; background:#fff;
+    border:1.5px solid var(--line); border-radius:999px; padding:6px 12px 6px 8px; }
+  .hud .lv-seal { width:26px; height:26px; border-radius:50%; background:var(--red); color:var(--gold-soft);
+    font-size:11px; font-weight:900; display:flex; align-items:center; justify-content:center; }
+  .hud .lv-name { font-size:11.5px; font-weight:900; color:var(--red-deep); }
+  .hud .xpbar { width:52px; height:6px; background:var(--gold-pale); border-radius:99px; overflow:hidden; }
+  .hud .xpbar i { display:block; height:100%; width:0%; background:linear-gradient(90deg,var(--red),var(--gold)); border-radius:99px; transition:width .5s ease; }
+
+  .card { background:#fff; border:1.5px solid var(--line); border-radius:18px; padding:16px;
+    box-shadow:0 5px 16px rgba(126,31,27,.06); }
+
+  .tabbar { position:sticky; bottom:0; margin-top:auto; display:flex; z-index:10;
+    background:var(--red-deep); padding:10px 8px 24px; }
+  .tabbar button { flex:1; background:none; font-size:10.5px; font-weight:800; color:#D9A08E;
+    display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .tabbar button .ico { font-size:19px; }
+  .tabbar button.on { color:var(--gold-soft); }
+
+  .toast { position:absolute; left:50%; bottom:110px; transform:translateX(-50%) translateY(16px);
+    background:rgba(58,18,16,.95); color:#FBEBD0; font-size:13px; font-weight:800;
+    padding:12px 20px; border-radius:999px; opacity:0; pointer-events:none;
+    transition:all .3s ease; z-index:99; white-space:nowrap; max-width:330px; }
+  .toast.show { opacity:1; transform:translateX(-50%); }
+
+  h4.sec { font-size:14px; font-weight:900; margin:18px 0 10px; color:var(--red-deep); }
+
+  /* ============ ① 홈 ============ */
+  #home .hero { position:relative; overflow:hidden; padding:70px 22px 26px;
+    background:linear-gradient(168deg,#C43A31 0%,var(--red-deep) 70%,#5E1713 100%); color:#FBEBD0; }
+  #home .lanterns { position:absolute; top:0; left:0; right:0; display:flex; justify-content:space-between; padding:0 20px; }
+  .lantern { width:34px; text-align:center; }
+  .lantern .string { width:2px; height:22px; background:rgba(247,223,168,.5); margin:0 auto; }
+  .lantern .body { width:30px; height:36px; margin:0 auto; border-radius:46% 46% 42% 42%;
+    background:radial-gradient(circle at 38% 30%, #F0A24A, #C43A31 65%, #8E241E);
+    box-shadow:0 0 18px rgba(240,162,74,.55), inset 0 -3px 0 rgba(58,18,16,.3); position:relative; }
+  .lantern .body::before { content:""; position:absolute; top:-4px; left:50%; transform:translateX(-50%);
+    width:14px; height:5px; background:#D8A237; border-radius:2px; }
+  .lantern .tassel { width:2px; height:10px; background:#D8A237; margin:0 auto; }
+  .lantern:nth-child(2) { transform:translateY(10px) scale(.82); opacity:.9; }
+  .lantern:nth-child(3) { transform:translateY(2px) scale(.95); }
+  #home .brand { display:flex; align-items:center; justify-content:space-between; margin:26px 0 18px; }
+  #home .brand .logo { font-size:26px; font-weight:900; letter-spacing:.02em; color:#F7DFA8; }
+  #home .brand .logo small { font-size:11px; letter-spacing:.3em; color:#E8B9A4; display:block; font-weight:800; margin-top:2px; }
+  #home .greet { font-size:21px; font-weight:900; line-height:1.45; }
+  #home .greet b { color:var(--gold-soft); }
+  #home .sub-greet { font-size:12px; color:#E8B9A4; margin-top:8px; line-height:1.6; }
+  .route-list { display:flex; flex-direction:column; gap:12px; padding:18px 20px 10px; }
+  .route { display:flex; align-items:center; gap:14px; text-align:left; position:relative; }
+  .route .r-ico { width:52px; height:52px; border-radius:14px; flex-shrink:0; font-size:25px;
+    background:linear-gradient(160deg,#FBF0DC,#F3E2C8); display:flex; align-items:center; justify-content:center;
+    box-shadow:inset 0 0 0 1.5px var(--line); }
+  .route .r-name { font-size:15px; font-weight:900; }
+  .route .r-meta { font-size:11.5px; color:var(--sub); margin-top:3px; font-weight:600; }
+  .route .r-go { margin-left:auto; font-size:12px; font-weight:900; color:var(--red);
+    background:#FDECEC; border-radius:999px; padding:8px 14px; flex-shrink:0; }
+  .route.soon { opacity:.62; }
+  .route.soon .r-go { background:var(--gold-pale); color:var(--brown); }
+  .home-note { margin:8px 20px 22px; font-size:11.5px; color:var(--sub); line-height:1.7;
+    background:var(--paper); border:1.5px dashed var(--line); border-radius:12px; padding:11px 14px; }
+
+  /* ============ ② 루트 맵 ============ */
+  .prog-hero { background:linear-gradient(160deg,#C43A31,var(--red-deep)); border-radius:20px;
+    padding:18px; color:#FBEBD0; position:relative; overflow:hidden; }
+  .prog-hero::after { content:"福"; position:absolute; right:-6px; bottom:-18px; font-size:88px;
+    color:rgba(247,223,168,.12); font-weight:900; }
+  .prog-hero .r-name { font-size:17px; font-weight:900; }
+  .prog-hero .r-meta { font-size:11.5px; color:#E8B9A4; margin-top:4px; font-weight:700; }
+  .prog-hero .p-count { font-size:26px; font-weight:900; color:var(--gold-soft); margin-top:10px; }
+  .prog-hero .p-bar { height:9px; background:rgba(58,18,16,.4); border-radius:99px; margin-top:8px; overflow:hidden; }
+  .prog-hero .p-bar i { display:block; height:100%; width:0%; background:linear-gradient(90deg,#F0A24A,var(--gold)); border-radius:99px; transition:width .5s ease; }
+  .loc-chip { display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:800;
+    color:var(--brown); background:var(--gold-pale); border-radius:999px; padding:6px 12px; margin-top:12px; }
+  .spot-list { display:flex; flex-direction:column; gap:10px; margin-top:12px; }
+  .spot-item { display:flex; align-items:center; gap:13px; text-align:left; }
+  .spot-item .seal { width:52px; height:52px; border-radius:50%; flex-shrink:0; font-size:20px; font-weight:900;
+    display:flex; align-items:center; justify-content:center; border:2px dashed #D8B98C; color:#C9B18C; background:var(--paper); }
+  .spot-item.got .seal { border:2.5px solid #8E241E; border-radius:50%; background:var(--red); color:var(--gold-soft);
+    transform:rotate(-8deg); box-shadow:0 3px 10px rgba(176,48,40,.35); }
+  .spot-item .s-name { font-size:14.5px; font-weight:900; }
+  .spot-item .s-desc { font-size:11.5px; color:var(--sub); margin-top:3px; }
+  .spot-item .s-state { margin-left:auto; font-size:11px; font-weight:900; flex-shrink:0;
+    color:var(--red); background:#FDECEC; border-radius:999px; padding:7px 12px; }
+  .spot-item.got .s-state { color:var(--green); background:#E9F4F0; }
+
+  /* ============ ③ 스폿 상세 ============ */
+  .spot-hero { border-radius:20px; overflow:hidden; position:relative; min-height:150px; padding:18px;
+    display:flex; flex-direction:column; justify-content:flex-end; color:#FBEBD0;
+    background:
+      radial-gradient(240px 130px at 80% 10%, rgba(240,162,74,.4), transparent 70%),
+      linear-gradient(170deg,#8E4A2E 0%,#4A2317 100%); }
+  .spot-hero .sh-seal { position:absolute; top:14px; right:14px; width:56px; height:56px; border-radius:50%;
+    border:2.5px solid var(--gold); color:var(--gold); font-size:24px; font-weight:900;
+    display:flex; align-items:center; justify-content:center; transform:rotate(9deg); opacity:.9; }
+  .spot-hero .sh-name { font-size:20px; font-weight:900; }
+  .spot-hero .sh-desc { font-size:12px; color:#F3D9BE; margin-top:5px; line-height:1.6; }
+  .quiz-card { border:2px solid var(--red); border-radius:18px; background:#fff; padding:18px; margin-top:14px; }
+  .quiz-card .q-label { font-size:11px; font-weight:900; letter-spacing:.2em; color:var(--red); }
+  .quiz-card .q-title { font-size:15px; font-weight:900; margin-top:8px; line-height:1.55; }
+  .quiz-card .q-sub { font-size:11.5px; color:var(--sub); margin-top:6px; line-height:1.6; }
+  .quiz-card.got { border-color:var(--line); background:var(--paper); text-align:center; padding:22px 18px; }
+  .got-seal { width:84px; height:84px; margin:0 auto 10px; border-radius:50%; border:3px solid #8E241E;
+    background:var(--red); color:var(--gold-soft); font-size:34px; font-weight:900;
+    display:flex; align-items:center; justify-content:center; transform:rotate(-9deg);
+    box-shadow:0 5px 16px rgba(176,48,40,.4); }
+  .got-txt { font-size:13px; font-weight:900; color:var(--red-deep); }
+  .notes { display:flex; flex-direction:column; gap:9px; }
+  .note-item { background:var(--paper); border:1.5px solid var(--line); border-radius:14px; padding:12px 14px; }
+  .note-item .n-tags { display:flex; gap:5px; margin-bottom:6px; }
+  .note-item .n-tag { font-size:10px; font-weight:900; color:var(--brown); background:var(--gold-pale);
+    border-radius:999px; padding:3px 9px; }
+  .note-item .n-text { font-size:12.5px; line-height:1.6; color:#54392E; }
+  .note-item .n-by { font-size:10.5px; color:var(--sub); margin-top:6px; font-weight:700; }
+  .note-item.mine { border-color:var(--gold); }
+  .note-item.mine .n-by::after { content:" · 내 쪽지 👀 3명이 봤어요"; color:var(--gold); font-weight:900; }
+  .notes-empty { text-align:center; font-size:12px; color:var(--sub); line-height:1.7;
+    background:var(--paper); border:1.5px dashed var(--line); border-radius:14px; padding:18px; }
+  .note-locked { display:flex; align-items:center; gap:10px; background:var(--gold-pale);
+    border-radius:14px; padding:13px 15px; font-size:12.5px; font-weight:800; color:var(--brown); }
+
+  /* ============ ④ 현장 문답 ============ */
+  #quiz { background:linear-gradient(175deg,#4A100E 0%,#240806 100%); }
+  #quiz .appbar { background:linear-gradient(rgba(74,16,14,.95) 60%, transparent); }
+  #quiz .appbar h2, #quiz .appbar .back { color:#FBEBD0; }
+  #quiz .appbar .back { background:rgba(255,255,255,.1); box-shadow:inset 0 0 0 1.5px rgba(247,223,168,.3); }
+  .q-paper { background:var(--paper); border-radius:18px; padding:22px 18px; color:var(--ink);
+    border:2px solid var(--gold); box-shadow:0 14px 34px rgba(0,0,0,.4); }
+  .q-paper .q-spot { font-size:11px; font-weight:900; letter-spacing:.14em; color:var(--red); }
+  .q-paper .q-question { font-size:17px; font-weight:900; line-height:1.6; margin:10px 0 4px; }
+  .q-paper .q-guide { font-size:11.5px; color:var(--sub); line-height:1.6; }
+  .q-opts { display:flex; flex-direction:column; gap:9px; margin-top:16px; }
+  .q-opt { background:#fff; border:1.5px solid var(--line); border-radius:12px; padding:14px;
+    font-size:14px; font-weight:800; color:var(--ink); text-align:left; transition:all .12s ease; }
+  .q-opt:active { transform:scale(.98); }
+  .q-opt.wrong { border-color:var(--red); background:#FDECEC; animation:shake .3s ease; }
+  @keyframes shake { 0%,100%{transform:none;} 25%{transform:translateX(-5px);} 75%{transform:translateX(5px);} }
+  .hint-box { margin-top:12px; }
+  .hint-btn { width:100%; background:var(--gold-pale); color:var(--brown); font-size:12.5px; font-weight:900;
+    border-radius:12px; padding:12px; }
+  .hint-txt { background:#FFF6DF; border:1.5px dashed var(--gold); border-radius:12px; padding:12px 14px;
+    font-size:12.5px; color:var(--brown); line-height:1.6; font-weight:700; display:none; }
+  .hint-txt.show { display:block; }
+  .q-foot { text-align:center; font-size:11px; color:#D9A08E; margin-top:14px; line-height:1.7; }
+
+  /* ============ ⑤ 스탬프 획득 ============ */
+  #stamp { background:radial-gradient(420px 320px at 50% 32%, rgba(216,162,55,.3), transparent 70%),
+    linear-gradient(175deg,#4A100E,#240806); text-align:center; justify-content:center; color:#FBEBD0; }
+  .stamp-big { width:150px; height:150px; margin:0 auto 20px; border-radius:50%;
+    border:5px solid #8E241E; background:var(--red); color:var(--gold-soft);
+    font-size:64px; font-weight:900; display:flex; align-items:center; justify-content:center;
+    transform:rotate(-9deg); box-shadow:0 0 0 4px rgba(247,223,168,.35), 0 14px 40px rgba(0,0,0,.5);
+    animation:stampin .45s cubic-bezier(.2,1.5,.4,1); }
+  @keyframes stampin { from{ transform:scale(2.1) rotate(8deg); opacity:0;} to{ transform:scale(1) rotate(-9deg); opacity:1;} }
+  #stamp .st-name { font-size:22px; font-weight:900; color:var(--gold-soft); }
+  #stamp .st-xp { font-size:15px; font-weight:900; color:#F0A24A; margin:8px 0 4px; }
+  #stamp .st-desc { font-size:12.5px; color:#E8B9A4; line-height:1.7; margin-bottom:30px; }
+
+  /* ============ ⑥ 레벨업 ============ */
+  #levelup { background:radial-gradient(460px 380px at 50% 30%, rgba(240,162,74,.35), transparent 70%),
+    linear-gradient(175deg,#6E2B24,#240806); text-align:center; justify-content:center; color:#FBEBD0; overflow:hidden; }
+  .lv-burst { position:absolute; top:32%; left:50%; width:600px; height:600px; transform:translate(-50%,-50%);
+    background:repeating-conic-gradient(rgba(247,223,168,.16) 0 11deg, transparent 11deg 24deg);
+    border-radius:50%; animation:spin 16s linear infinite; }
+  @keyframes spin { to{ transform:translate(-50%,-50%) rotate(360deg);} }
+  #levelup .content { position:relative; z-index:2; padding:0 26px; }
+  .lv-badge { width:130px; height:130px; margin:0 auto 18px; border-radius:50%;
+    background:radial-gradient(circle at 36% 30%, #EFC15C, var(--gold) 55%, #A87B1C);
+    color:#4A3208; font-size:52px; font-weight:900; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 0 0 5px rgba(247,223,168,.4), 0 0 40px rgba(216,162,55,.6);
+    animation:stampin .5s cubic-bezier(.2,1.6,.4,1); }
+  #levelup .lv-label { font-size:12px; font-weight:900; letter-spacing:.3em; color:#F0A24A; }
+  #levelup .lv-title { font-size:27px; font-weight:900; color:var(--gold-soft); margin:8px 0 6px; }
+  #levelup .lv-desc { font-size:13px; color:#E8B9A4; line-height:1.75; margin-bottom:30px; }
+
+  /* ============ ⑦ 쪽지 작성 ============ */
+  .tag-row { display:flex; flex-wrap:wrap; gap:8px; }
+  .tag-chip { background:#fff; border:1.5px solid var(--line); border-radius:999px;
+    padding:9px 14px; font-size:12.5px; font-weight:800; color:var(--brown); }
+  .tag-chip.on { background:var(--red); border-color:#8E241E; color:var(--gold-soft); }
+  #note textarea { width:100%; height:92px; background:#fff; border:1.5px solid var(--line);
+    border-radius:14px; padding:14px; font-family:inherit; font-size:14px; color:var(--ink);
+    resize:none; margin-top:6px; line-height:1.6; }
+  #note textarea:focus { outline:none; border-color:var(--red); }
+  .char-cnt { text-align:right; font-size:11px; color:var(--sub); font-weight:700; margin-top:6px; }
+  .note-policy { font-size:11.5px; color:var(--sub); line-height:1.7; background:var(--paper);
+    border:1.5px dashed var(--line); border-radius:12px; padding:11px 14px; margin:12px 0; }
+  .confirm-box { display:none; background:#FFF6DF; border:2px solid var(--gold); border-radius:16px;
+    padding:16px; margin-top:12px; }
+  .confirm-box.show { display:block; }
+  .confirm-box .c-title { font-size:13.5px; font-weight:900; color:var(--brown); margin-bottom:6px; }
+  .confirm-box .c-preview { font-size:13px; color:var(--ink); line-height:1.6; background:#fff;
+    border-radius:10px; padding:10px 12px; margin-bottom:12px; }
+
+  /* ============ ⑧ 뱃지 컬렉션 ============ */
+  .badge-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  .badge { background:#fff; border:1.5px solid var(--line); border-radius:16px; padding:14px 8px;
+    text-align:center; display:flex; flex-direction:column; align-items:center; gap:7px; }
+  .badge .b-ico { width:54px; height:54px; border-radius:50%; font-size:25px;
+    display:flex; align-items:center; justify-content:center;
+    background:radial-gradient(circle at 36% 30%, #EFC15C, var(--gold) 60%, #A87B1C);
+    box-shadow:0 3px 10px rgba(216,162,55,.35); }
+  .badge .b-name { font-size:11.5px; font-weight:900; color:var(--red-deep); }
+  .badge .b-cond { font-size:9.5px; color:var(--sub); line-height:1.5; font-weight:700; }
+  .badge.locked .b-ico { background:#E5DCC9; color:#B3A88E; box-shadow:none; filter:grayscale(1); }
+  .badge.locked .b-name { color:#B3A88E; }
+
+  /* ============ ⑨ 완주 결과 카드 ============ */
+  #result { background:linear-gradient(175deg,#4A100E,#240806); justify-content:center; }
+  .cert { margin:0 22px; background:var(--paper); border-radius:6px; padding:26px 22px; color:var(--ink);
+    border:2px solid var(--gold); box-shadow:0 0 0 6px rgba(216,162,55,.18), 0 20px 50px rgba(0,0,0,.5);
+    text-align:center; position:relative;
+    background-image:repeating-linear-gradient(0deg, transparent 0 27px, rgba(139,111,71,.06) 27px 28px); }
+  .cert .c-head { font-size:11px; font-weight:900; letter-spacing:.4em; color:var(--red); }
+  .cert h3 { font-size:23px; font-weight:900; color:var(--red-deep); margin:10px 0 4px; }
+  .cert .c-sub { font-size:11.5px; color:var(--sub); font-weight:700; }
+  .cert .c-stamps { display:flex; justify-content:center; gap:10px; margin:18px 0; }
+  .cert .c-seal { width:56px; height:56px; border-radius:50%; border:2.5px solid #8E241E;
+    background:var(--red); color:var(--gold-soft); font-size:22px; font-weight:900;
+    display:flex; align-items:center; justify-content:center; }
+  .cert .c-seal:nth-child(odd) { transform:rotate(-8deg); }
+  .cert .c-seal:nth-child(even) { transform:rotate(6deg); }
+  .cert .c-stats { display:flex; border-top:1.5px dashed var(--line); border-bottom:1.5px dashed var(--line);
+    padding:12px 0; margin-bottom:14px; }
+  .cert .c-stat { flex:1; }
+  .cert .c-stat .k { font-size:9.5px; color:var(--sub); font-weight:800; letter-spacing:.1em; }
+  .cert .c-stat .v { font-size:15px; font-weight:900; color:var(--red-deep); margin-top:3px; }
+  .cert .c-foot { font-size:10.5px; color:var(--sub); line-height:1.6; }
+  .cert .c-tong { position:absolute; top:18px; right:16px; width:54px; height:54px; border-radius:50%;
+    border:2.5px solid var(--red); color:var(--red); font-size:22px; font-weight:900;
+    display:flex; align-items:center; justify-content:center; transform:rotate(10deg); opacity:.85; }
+
+  @media (max-width:860px){ .stage-note{display:none;} body{padding:10px;} }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="stage-note">
+    <span class="retro-label">仁川 차이나타운 · 紅燈</span>
+    <h1>잡고 JABGO<br>MVP 인터랙티브 목업</h1>
+    <p>가입 없이 하루 안에 완결되는 골목 스탬프 여정. <b>루트 선택 → 현장 문답 → 스탬프·레벨 → 쪽지 → 완주 인증서</b>까지 PRD의 전체 플로우를 클릭으로 체험하세요.</p>
+    <p style="margin-top:10px; font-size:12px;">💡 문답 정답: 3글자 / 5개 / 3명 / 공자상<br>(오답도 페널티 없음 — 힌트를 눌러보세요)</p>
+    <span class="tag">CONCEPT 01 · 홍등</span>
+  </div>
+
+  <div class="phone">
+    <div class="viewport">
+
+      <!-- ① 홈: 루트 선택 -->
+      <section class="screen active" id="home">
+        <div class="hero">
+          <div class="lanterns"><div class="lantern"><div class="string"></div><div class="body"></div><div class="tassel"></div></div><div class="lantern"><div class="string"></div><div class="body"></div><div class="tassel"></div></div><div class="lantern"><div class="string"></div><div class="body"></div><div class="tassel"></div></div></div>
+          <div class="brand">
+            <div class="logo">잡고<small>JABGO · 仁川</small></div>
+            <div class="hud" style="background:rgba(255,252,244,.95);"><span class="lv-seal lv-hanja">觀</span><div><div class="lv-name lv-title-txt">Lv.1 관광객</div><div class="xpbar"><i class="xp-fill"></i></div></div></div>
+          </div>
+          <div class="greet">오늘은 어느 골목을<br><b>잡아</b>볼까요?</div>
+          <div class="sub-greet">패루 뒤 골목엔 90분짜리 관광이 놓치는 것들이 있어요.</div>
+        </div>
+        <div class="route-list">
+          <button class="card route" data-route="food">
+            <span class="r-ico">🍜</span>
+            <span><span class="r-name">골목 미식 루트</span><br><span class="r-meta">스폿 4개 · 도보 40분 · 難易度 ★★☆</span></span>
+            <span class="r-go">시작 →</span>
+          </button>
+          <button class="card route soon" data-route="soon">
+            <span class="r-ico">🏛️</span>
+            <span><span class="r-name">개항장 역사 루트</span><br><span class="r-meta">스폿 5개 · 도보 60분 · 準備中</span></span>
+            <span class="r-go">준비중</span>
+          </button>
+          <button class="card route soon" data-route="soon">
+            <span class="r-ico">🎨</span>
+            <span><span class="r-name">벽화·사진 루트</span><br><span class="r-meta">스폿 4개 · 도보 35분 · 準備中</span></span>
+            <span class="r-go">준비중</span>
+          </button>
+        </div>
+        <div class="home-note">🧧 가입 없이 바로 시작해요. 진행 상황은 이 기기에 저장되고, 루트를 바꿔도 획득한 스탬프는 사라지지 않아요.</div>
+      </section>
+
+      <!-- ② 루트 맵(목록형) -->
+      <section class="screen" id="map">
+        <div class="appbar">
+          <button class="back" data-nav="home">‹</button><h2>골목 미식 루트</h2>
+          <div class="hud"><span class="lv-seal lv-hanja">觀</span><div><div class="lv-name lv-title-txt">Lv.1 관광객</div><div class="xpbar"><i class="xp-fill"></i></div></div></div>
+        </div>
+        <div class="px" style="padding-bottom:12px;">
+          <div class="prog-hero">
+            <div class="r-name">🍜 골목 미식 루트</div>
+            <div class="r-meta">순서는 자유 — 가까운 곳부터 잡아보세요</div>
+            <div class="p-count"><span id="p-num">0</span> / 4 스탬프</div>
+            <div class="p-bar"><i id="p-fill"></i></div>
+          </div>
+          <span class="loc-chip">📍 위치 권한 미허용 · 현장 문답만으로 인증돼요</span>
+          <div class="spot-list" id="spot-list"></div>
+          <button class="btn gold" id="btn-finish" style="margin-top:14px; display:none;">🧧 여정 결과 카드 받기</button>
+        </div>
+        <nav class="tabbar">
+          <button data-nav="home"><span class="ico">🏮</span>홈</button>
+          <button class="on"><span class="ico">🗺️</span>루트맵</button>
+          <button data-nav="badges"><span class="ico">🎖️</span>컬렉션</button>
+        </nav>
+      </section>
+
+      <!-- ③ 스폿 상세 -->
+      <section class="screen" id="spot">
+        <div class="appbar">
+          <button class="back" data-nav="map">‹</button><h2 id="sp-title">스폿</h2>
+          <div class="hud"><span class="lv-seal lv-hanja">觀</span><div><div class="lv-name lv-title-txt">Lv.1 관광객</div><div class="xpbar"><i class="xp-fill"></i></div></div></div>
+        </div>
+        <div class="px" style="padding-bottom:26px;">
+          <div class="spot-hero">
+            <div class="sh-seal" id="sp-hanja">春</div>
+            <div class="sh-name" id="sp-name">공화춘</div>
+            <div class="sh-desc" id="sp-desc">설명</div>
+          </div>
+          <div id="sp-quiz-area"></div>
+          <h4 class="sec">💌 여행자들의 쪽지</h4>
+          <div class="notes" id="sp-notes"></div>
+          <div id="sp-note-cta" style="margin-top:12px;"></div>
+        </div>
+      </section>
+
+      <!-- ④ 현장 문답 -->
+      <section class="screen" id="quiz">
+        <div class="appbar">
+          <button class="back" data-nav="spot">‹</button><h2>현장 문답</h2>
+        </div>
+        <div class="px" style="padding-bottom:26px; margin-top:8px;">
+          <div class="q-paper">
+            <div class="q-spot" id="q-spot">공화춘</div>
+            <div class="q-question" id="q-question">질문</div>
+            <div class="q-guide">👀 지금 눈앞의 현장을 직접 확인해야 풀 수 있어요.</div>
+            <div class="q-opts" id="q-opts"></div>
+            <div class="hint-box">
+              <button class="hint-btn" id="btn-hint">🏮 힌트 보기 (1회)</button>
+              <div class="hint-txt" id="hint-txt"></div>
+            </div>
+          </div>
+          <p class="q-foot">오답 페널티는 없어요. 몇 번이든 다시 도전! 🧧</p>
+        </div>
+      </section>
+
+      <!-- ⑤ 스탬프 획득 -->
+      <section class="screen" id="stamp">
+        <div>
+          <div class="stamp-big" id="st-hanja">春</div>
+          <div class="st-name" id="st-name">공화춘 스탬프 획득!</div>
+          <div class="st-xp">+25 XP</div>
+          <p class="st-desc" id="st-desc">골목의 진짜 얼굴 하나를 잡았어요.</p>
+          <div class="px">
+            <button class="btn gold" id="btn-after-stamp">계속하기</button>
+            <button class="btn ghost" id="btn-write-note" style="margin-top:10px; color:#E8B9A4; box-shadow:inset 0 0 0 1.5px rgba(247,223,168,.35);">💌 이 스폿에 쪽지 남기기</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ⑥ 레벨업 -->
+      <section class="screen" id="levelup">
+        <div class="lv-burst"></div>
+        <div class="content">
+          <div class="lv-badge" id="lv-hanja-big">散</div>
+          <div class="lv-label">LEVEL UP!</div>
+          <div class="lv-title" id="lv-new-title">Lv.2 산책자</div>
+          <p class="lv-desc" id="lv-new-desc">골목의 공기가 익숙해지기 시작했어요.</p>
+          <button class="btn gold" data-nav="map">루트로 돌아가기</button>
+        </div>
+      </section>
+
+      <!-- ⑦ 쪽지 작성 -->
+      <section class="screen" id="note">
+        <div class="appbar">
+          <button class="back" data-nav="spot">‹</button><h2>쪽지 남기기</h2>
+        </div>
+        <div class="px" style="padding-bottom:26px;">
+          <div class="card">
+            <div style="font-size:12px; font-weight:900; color:var(--red);" id="n-spot">공화춘</div>
+            <div style="font-size:15px; font-weight:900; margin:6px 0 12px;">다음 여행자에게 한 줄 남겨주세요</div>
+            <div class="tag-row" id="tag-row">
+              <button class="tag-chip" data-tag="🍜 맛집">🍜 맛집</button>
+              <button class="tag-chip" data-tag="📷 사진스팟">📷 사진스팟</button>
+              <button class="tag-chip" data-tag="🤫 숨은명소">🤫 숨은명소</button>
+              <button class="tag-chip" data-tag="⏰ 시간꿀팁">⏰ 시간꿀팁</button>
+              <button class="tag-chip" data-tag="👶 아이와">👶 아이와</button>
+            </div>
+            <textarea id="n-text" maxlength="40" placeholder="예) 오후 3시엔 줄이 없어요 (40자 이내)"></textarea>
+            <div class="char-cnt"><span id="n-cnt">0</span> / 40자 · 태그 <span id="t-cnt">0</span>/2</div>
+          </div>
+          <div class="note-policy">✍️ 쪽지는 <b>수정·삭제할 수 없어요</b>. 별점도, XP 보상도 없어요 — 대신 내 쪽지를 읽은 여행자 수를 알려드려요.</div>
+          <button class="btn" id="btn-note-preview">이대로 남길게요</button>
+          <div class="confirm-box" id="confirm-box">
+            <div class="c-title">🧧 마지막 확인 — 이 쪽지를 남길까요?</div>
+            <div class="c-preview" id="c-preview"></div>
+            <button class="btn gold" id="btn-note-submit">네, 남길게요</button>
+            <button class="btn ghost" id="btn-note-cancel" style="margin-top:8px;">다시 쓸래요</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ⑧ 뱃지 컬렉션 -->
+      <section class="screen" id="badges">
+        <div class="appbar">
+          <button class="back" data-nav="map">‹</button><h2>뱃지 컬렉션</h2>
+          <div class="hud"><span class="lv-seal lv-hanja">觀</span><div><div class="lv-name lv-title-txt">Lv.1 관광객</div><div class="xpbar"><i class="xp-fill"></i></div></div></div>
+        </div>
+        <div class="px" style="padding-bottom:14px;">
+          <div class="card" style="text-align:center; padding:18px;">
+            <div style="font-size:12px; font-weight:800; color:var(--sub);">오늘의 여정 레벨</div>
+            <div style="font-size:22px; font-weight:900; color:var(--red-deep); margin-top:4px;" class="lv-title-txt">Lv.1 관광객</div>
+            <div style="font-size:11.5px; color:var(--sub); margin-top:4px;" id="lv-next-hint">다음 레벨까지 25 XP</div>
+          </div>
+          <h4 class="sec">뱃지 (미획득은 실루엣으로 보여요)</h4>
+          <div class="badge-grid" id="badge-grid"></div>
+        </div>
+        <nav class="tabbar">
+          <button data-nav="home"><span class="ico">🏮</span>홈</button>
+          <button data-nav="map"><span class="ico">🗺️</span>루트맵</button>
+          <button class="on"><span class="ico">🎖️</span>컬렉션</button>
+        </nav>
+      </section>
+
+      <!-- ⑨ 완주 결과 카드 -->
+      <section class="screen" id="result">
+        <div style="padding:70px 0 30px;">
+          <div class="cert">
+            <div class="c-tong">通</div>
+            <div class="c-head">仁川 CHINATOWN · JABGO</div>
+            <h3>차이나타운 通 인증서</h3>
+            <div class="c-sub" id="r-title-line">골목 미식 루트 完走 · Lv.4 차이나타운 通</div>
+            <div class="c-stamps"><span class="c-seal">春</span><span class="c-seal">餃</span><span class="c-seal">義</span><span class="c-seal">階</span></div>
+            <div class="c-stats">
+              <div class="c-stat"><div class="k">스탬프</div><div class="v">4개</div></div>
+              <div class="c-stat"><div class="k">획득 XP</div><div class="v">100</div></div>
+              <div class="c-stat"><div class="k">남긴 쪽지</div><div class="v" id="r-notes">0장</div></div>
+            </div>
+            <div class="c-foot">이 카드를 받은 당신, 이제 패루 뒤의 골목을 아는 사람.<br>다음 여행자에게 링크로 전해주세요 🧧</div>
+          </div>
+          <div class="px" style="margin-top:18px;">
+            <button class="btn gold" id="btn-share">📤 결과 카드 공유하기</button>
+            <button class="btn ghost" data-nav="home" style="margin-top:10px; color:#E8B9A4; box-shadow:inset 0 0 0 1.5px rgba(247,223,168,.35);">처음으로</button>
+          </div>
+        </div>
+      </section>
+
+      <div class="toast" id="toast"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- 데이터 (PRD: 스폿·문답·루트 데이터 분리) ---------- */
+  var SPOTS = [
+    { id:"gong", hanja:"春", name:"공화춘", desc:"1908년 개업, 짜장면의 시작점. 지금은 짜장면박물관.",
+      quiz:{ q:"공화춘 현판의 한자는 모두 몇 글자일까요?", opts:["2글자","3글자","4글자"], answer:1,
+        hint:"현판을 올려다보세요. 마지막 글자는 봄 춘(春)이에요." } },
+    { id:"mandu", hanja:"餃", name:"화덕만두 골목", desc:"화덕에서 바로 구워내는 만두 골목. 줄 서는 이유가 있어요.",
+      quiz:{ q:"가게 앞 화덕 안내판에 그려진 만두는 몇 개일까요?", opts:["3개","5개","7개"], answer:1,
+        hint:"화덕 바로 옆 노란 안내판을 세어보세요. 한 손 가득!" } },
+    { id:"byeok", hanja:"義", name:"삼국지 벽화거리", desc:"160m 벽면에 펼쳐지는 삼국지. 첫 장면부터 보세요.",
+      quiz:{ q:"벽화 첫 장면 '도원결의'에 등장하는 인물은 몇 명일까요?", opts:["2명","3명","4명"], answer:1,
+        hint:"복숭아나무 아래에서 의형제를 맺은 사람들을 떠올려보세요." } },
+    { id:"gyedan", hanja:"階", name:"청일조계지 계단", desc:"왼쪽은 청국, 오른쪽은 일본. 경계 위에 선 계단.",
+      quiz:{ q:"계단 중앙 꼭대기에 서 있는 석상은 누구일까요?", opts:["해태상","이순신상","공자상"], answer:2,
+        hint:"논어를 남긴 분이에요. 學而時習之…" } }
+  ];
+  var LEVELS = [
+    { lv:1, xp:0,   hanja:"觀", title:"관광객",       desc:"" },
+    { lv:2, xp:25,  hanja:"散", title:"산책자",       desc:"골목의 공기가 익숙해지기 시작했어요." },
+    { lv:3, xp:75,  hanja:"探", title:"골목탐험가",   desc:"이제 지도 없이도 골목이 보여요." },
+    { lv:4, xp:100, hanja:"通", title:"차이나타운 通", desc:"패루 뒤의 골목을 아는 사람이 됐어요." }
+  ];
+  var SEED_NOTES = {
+    gong:   [{ tags:["🍜 맛집"], text:"하얀 짜장 꼭 드세요. 3시엔 안 기다려요", by:"어느 골목탐험가" }],
+    mandu:  [],
+    byeok:  [{ tags:["📷 사진스팟"], text:"적벽대전 벽화 앞이 인생샷 스팟이에요", by:"어느 산책자" }],
+    gyedan: [{ tags:["🤫 숨은명소"], text:"계단 꼭대기에 서면 항구가 보여요", by:"어느 通" }]
+  };
+  var BADGES = [
+    { id:"first",  ico:"🧧", name:"첫 도장",      cond:"스탬프 1개 획득",     test:function(s){ return s.stamps.length >= 1; } },
+    { id:"walk",   ico:"👟", name:"산책자",       cond:"Lv.2 도달 (25 XP)",   test:function(s){ return s.xp >= 25; } },
+    { id:"explore",ico:"🔍", name:"골목탐험가",   cond:"Lv.3 도달 (75 XP)",   test:function(s){ return s.xp >= 75; } },
+    { id:"tong",   ico:"🏮", name:"차이나타운 通", cond:"Lv.4 도달 (100 XP)",  test:function(s){ return s.xp >= 100; } },
+    { id:"writer", ico:"💌", name:"쪽지 작가",    cond:"쪽지 1장 남기기",     test:function(s){ return s.myNotes >= 1; } },
+    { id:"full",   ico:"🥇", name:"미식 完走",    cond:"미식 루트 4개 완주",  test:function(s){ return s.stamps.length >= 4; } }
+  ];
+
+  /* ---------- 상태 ---------- */
+  var state = { xp:0, stamps:[], myNotes:0, notes:{}, hintUsed:{}, current:null, pendingLevel:null };
+  Object.keys(SEED_NOTES).forEach(function (k) { state.notes[k] = SEED_NOTES[k].slice(); });
+
+  function $(s, r) { return (r || document).querySelector(s); }
+  function $all(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
+  function levelFor(xp) { var l = LEVELS[0]; LEVELS.forEach(function (x) { if (xp >= x.xp) l = x; }); return l; }
+  function spotById(id) { return SPOTS.filter(function (s) { return s.id === id; })[0]; }
+
+  /* ---------- 렌더 ---------- */
+  function render() {
+    var lv = levelFor(state.xp);
+    $all(".lv-hanja").forEach(function (el) { el.textContent = lv.hanja; });
+    $all(".lv-title-txt").forEach(function (el) { el.textContent = "Lv." + lv.lv + " " + lv.title; });
+    var next = LEVELS.filter(function (x) { return x.xp > state.xp; })[0];
+    var base = lv.xp, cap = next ? next.xp : lv.xp;
+    var pct = next ? Math.round((state.xp - base) / (cap - base) * 100) : 100;
+    $all(".xp-fill").forEach(function (el) { el.style.width = pct + "%"; });
+    $("#lv-next-hint").textContent = next ? ("다음 레벨까지 " + (next.xp - state.xp) + " XP") : "최고 레벨 달성! (스탬프는 계속 모을 수 있어요)";
+
+    // 루트맵
+    $("#p-num").textContent = state.stamps.length;
+    $("#p-fill").style.width = (state.stamps.length / 4 * 100) + "%";
+    var list = $("#spot-list"); list.innerHTML = "";
+    SPOTS.forEach(function (s) {
+      var got = state.stamps.indexOf(s.id) >= 0;
+      var el = document.createElement("button");
+      el.className = "card spot-item" + (got ? " got" : "");
+      el.setAttribute("data-spot", s.id);
+      el.innerHTML = '<span class="seal">' + (got ? s.hanja : "?") + '</span>' +
+        '<span><span class="s-name">' + s.name + '</span><br><span class="s-desc">' + s.desc.split(".")[0] + '</span></span>' +
+        '<span class="s-state">' + (got ? "획득 ✓" : "도전") + '</span>';
+      list.appendChild(el);
+    });
+    $("#btn-finish").style.display = state.stamps.length === 4 ? "block" : "none";
+
+    // 뱃지
+    var grid = $("#badge-grid"); grid.innerHTML = "";
+    BADGES.forEach(function (b) {
+      var got = b.test(state);
+      var el = document.createElement("div");
+      el.className = "badge" + (got ? "" : " locked");
+      el.innerHTML = '<span class="b-ico">' + (got ? b.ico : "🔒") + '</span>' +
+        '<span class="b-name">' + b.name + '</span><span class="b-cond">' + b.cond + '</span>';
+      grid.appendChild(el);
+    });
+
+    $("#r-notes").textContent = state.myNotes + "장";
+  }
+
+  function show(id) {
+    $all(".screen").forEach(function (s) { s.classList.remove("active"); });
+    var t = $("#" + id); t.classList.add("active"); t.scrollTop = 0;
+    render();
+  }
+
+  var toastTimer = null;
+  function toast(msg) {
+    var t = $("#toast"); t.textContent = msg; t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove("show"); }, 2000);
+  }
+
+  /* ---------- 스폿 상세 ---------- */
+  function openSpot(id) {
+    state.current = id;
+    var s = spotById(id), got = state.stamps.indexOf(id) >= 0;
+    $("#sp-title").textContent = s.name;
+    $("#sp-hanja").textContent = s.hanja;
+    $("#sp-name").textContent = s.name;
+    $("#sp-desc").textContent = s.desc;
+
+    var qa = $("#sp-quiz-area");
+    if (got) {
+      qa.innerHTML = '<div class="quiz-card got"><div class="got-seal">' + s.hanja + '</div>' +
+        '<div class="got-txt">이미 잡은 스폿이에요 — 스탬프 보관 중 🧧</div></div>';
+    } else {
+      qa.innerHTML = '<div class="quiz-card"><div class="q-label">現場 問答</div>' +
+        '<div class="q-title">' + s.quiz.q + '</div>' +
+        '<div class="q-sub">현장에서 직접 눈으로 확인해야 풀 수 있어요. 정답을 맞히면 스탬프가 찍혀요.</div>' +
+        '<button class="btn" data-quiz="' + id + '" style="margin-top:14px;">📿 문답 도전하기</button></div>';
+    }
+
+    var notes = state.notes[id], box = $("#sp-notes");
+    if (notes.length === 0) {
+      box.innerHTML = '<div class="notes-empty">아직 쪽지가 없어요.<br>이 골목의 <b>첫 번째 기록자</b>가 되어주세요! ✍️</div>';
+    } else {
+      box.innerHTML = notes.map(function (n) {
+        return '<div class="note-item' + (n.mine ? " mine" : "") + '">' +
+          '<div class="n-tags">' + n.tags.map(function (t) { return '<span class="n-tag">' + t + '</span>'; }).join("") + '</div>' +
+          '<div class="n-text">"' + n.text + '"</div><div class="n-by">— ' + n.by + '</div></div>';
+      }).join("");
+    }
+
+    var cta = $("#sp-note-cta");
+    if (got) {
+      cta.innerHTML = '<button class="btn gold" data-note="' + id + '">💌 나도 쪽지 남기기</button>';
+    } else {
+      cta.innerHTML = '<div class="note-locked">🔒 쪽지는 스탬프를 먼저 잡아야 남길 수 있어요</div>';
+    }
+    show("spot");
+  }
+
+  /* ---------- 문답 ---------- */
+  function openQuiz(id) {
+    var s = spotById(id);
+    $("#q-spot").textContent = s.name + " · " + s.hanja;
+    $("#q-question").textContent = s.quiz.q;
+    var opts = $("#q-opts"); opts.innerHTML = "";
+    s.quiz.opts.forEach(function (o, i) {
+      var b = document.createElement("button");
+      b.className = "q-opt"; b.textContent = ["㉮ ","㉯ ","㉰ "][i] + o;
+      b.setAttribute("data-answer", i);
+      opts.appendChild(b);
+    });
+    $("#hint-txt").textContent = "🏮 " + s.quiz.hint;
+    $("#hint-txt").classList.remove("show");
+    $("#btn-hint").style.display = state.hintUsed[id] ? "none" : "block";
+    if (state.hintUsed[id]) $("#hint-txt").classList.add("show");
+    show("quiz");
+  }
+
+  function correct() {
+    var s = spotById(state.current);
+    var prevLv = levelFor(state.xp).lv;
+    state.stamps.push(s.id);
+    state.xp += 25;
+    var newLv = levelFor(state.xp);
+    state.pendingLevel = newLv.lv > prevLv ? newLv : null;
+
+    $("#st-hanja").textContent = s.hanja;
+    $("#st-name").textContent = s.name + " 스탬프 획득!";
+    $("#st-desc").textContent = "골목의 진짜 얼굴 하나를 잡았어요. (" + state.stamps.length + "/4)";
+    $("#btn-after-stamp").textContent = state.pendingLevel ? "🎉 레벨업 확인하기" : (state.stamps.length === 4 ? "🧧 여정 결과 보러가기" : "루트로 돌아가기");
+    show("stamp");
+  }
+
+  /* ---------- 이벤트 라우터 ---------- */
+  document.addEventListener("click", function (e) {
+
+    // 루트 선택
+    var route = e.target.closest("[data-route]");
+    if (route) {
+      if (route.getAttribute("data-route") === "soon") { toast("🏮 준비 중인 루트예요. 미식 루트로 먼저 잡아볼까요?"); return; }
+      show("map"); return;
+    }
+
+    // 스폿 진입
+    var sp = e.target.closest("[data-spot]");
+    if (sp) { openSpot(sp.getAttribute("data-spot")); return; }
+
+    // 문답 시작
+    var qz = e.target.closest("[data-quiz]");
+    if (qz) { openQuiz(qz.getAttribute("data-quiz")); return; }
+
+    // 문답 선택지
+    var opt = e.target.closest(".q-opt");
+    if (opt) {
+      var s = spotById(state.current);
+      if (parseInt(opt.getAttribute("data-answer"), 10) === s.quiz.answer) { correct(); }
+      else {
+        opt.classList.add("wrong");
+        setTimeout(function () { opt.classList.remove("wrong"); }, 400);
+        toast("🙅 아쉬워요! 현장을 다시 한 번 볼까요?");
+      }
+      return;
+    }
+
+    // 힌트 (1회)
+    if (e.target.closest("#btn-hint")) {
+      state.hintUsed[state.current] = true;
+      $("#hint-txt").classList.add("show");
+      $("#btn-hint").style.display = "none";
+      return;
+    }
+
+    // 스탬프 후 분기
+    if (e.target.closest("#btn-after-stamp")) {
+      if (state.pendingLevel) {
+        var L = state.pendingLevel; state.pendingLevel = null;
+        $("#lv-hanja-big").textContent = L.hanja;
+        $("#lv-new-title").textContent = "Lv." + L.lv + " " + L.title;
+        $("#lv-new-desc").textContent = L.desc;
+        show("levelup");
+      } else if (state.stamps.length === 4) { show("result"); }
+      else { show("map"); }
+      return;
+    }
+
+    // 쪽지 작성 열기 (스탬프 화면 or 스폿 상세)
+    var noteBtn = e.target.closest("[data-note], #btn-write-note");
+    if (noteBtn) {
+      var s2 = spotById(state.current);
+      $("#n-spot").textContent = s2.name + " · " + s2.hanja;
+      $("#n-text").value = ""; $("#n-cnt").textContent = "0"; $("#t-cnt").textContent = "0";
+      $all(".tag-chip").forEach(function (c) { c.classList.remove("on"); });
+      $("#confirm-box").classList.remove("show");
+      show("note");
+      return;
+    }
+
+    // 태그 (최대 2)
+    var chip = e.target.closest(".tag-chip");
+    if (chip) {
+      if (!chip.classList.contains("on") && $all(".tag-chip.on").length >= 2) { toast("태그는 최대 2개까지예요"); return; }
+      chip.classList.toggle("on");
+      $("#t-cnt").textContent = $all(".tag-chip.on").length;
+      return;
+    }
+
+    // 쪽지 미리보기 → 확인
+    if (e.target.closest("#btn-note-preview")) {
+      var txt = $("#n-text").value.trim();
+      if (!txt) { toast("한 줄을 먼저 적어주세요 ✍️"); return; }
+      var tags = $all(".tag-chip.on").map(function (c) { return c.getAttribute("data-tag"); });
+      $("#c-preview").innerHTML = (tags.length ? tags.join(" · ") + "<br>" : "") + '"' + txt + '"';
+      $("#confirm-box").classList.add("show");
+      return;
+    }
+    if (e.target.closest("#btn-note-cancel")) { $("#confirm-box").classList.remove("show"); return; }
+
+    // 쪽지 확정 (XP 없음)
+    if (e.target.closest("#btn-note-submit")) {
+      var text = $("#n-text").value.trim();
+      var tags2 = $all(".tag-chip.on").map(function (c) { return c.getAttribute("data-tag"); });
+      var lvNow = levelFor(state.xp);
+      state.notes[state.current].unshift({ tags: tags2.length ? tags2 : ["💌 한줄"], text: text, by: "나 · " + lvNow.title, mine: true });
+      state.myNotes += 1;
+      toast("💌 쪽지를 남겼어요! (XP는 오르지 않아요)");
+      openSpot(state.current);
+      return;
+    }
+
+    // 완주 카드
+    if (e.target.closest("#btn-finish")) { show("result"); return; }
+    if (e.target.closest("#btn-share")) { toast("📤 공유 링크가 복사됐어요! (데모)"); return; }
+
+    // 일반 내비게이션
+    var nav = e.target.closest("[data-nav]");
+    if (nav) { show(nav.getAttribute("data-nav")); return; }
+  });
+
+  // 쪽지 글자수
+  document.addEventListener("input", function (e) {
+    if (e.target.id === "n-text") $("#n-cnt").textContent = e.target.value.length;
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

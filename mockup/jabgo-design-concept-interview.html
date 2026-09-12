@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>잡고(JABGO) 디자인 컨셉 선택</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  :root {
+    --bg:#F6F7F9; --card:#fff; --ink:#1B1E28; --sub:#6B7280; --line:#E5E7EB;
+    --red:#E5484D; --red-soft:#FDECEC;
+  }
+  body {
+    font-family:"Apple SD Gothic Neo","Pretendard","Noto Sans KR",system-ui,sans-serif;
+    background:var(--bg); color:var(--ink); padding-bottom:120px;
+  }
+  .wrap { max-width:1240px; margin:0 auto; padding:40px 24px; }
+  header { margin-bottom:30px; }
+  .eyebrow { display:inline-flex; font-size:12px; font-weight:800; letter-spacing:.14em;
+    color:var(--red); background:var(--red-soft); padding:6px 14px; border-radius:999px; margin-bottom:14px; }
+  h1 { font-size:30px; font-weight:900; letter-spacing:-.02em; }
+  .lead { margin-top:10px; font-size:15px; color:var(--sub); line-height:1.75; max-width:760px; }
+  .lead b { color:var(--ink); }
+
+  .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:20px; }
+
+  /* ===== 컨셉 카드 ===== */
+  .concept {
+    background:var(--card); border:1.5px solid var(--line); border-radius:22px; overflow:hidden;
+    cursor:pointer; transition:all .15s ease; position:relative; display:flex; flex-direction:column;
+  }
+  .concept:hover { border-color:#c9cdd4; transform:translateY(-3px); box-shadow:0 12px 28px rgba(27,30,40,.08); }
+  .concept.sel { border-color:var(--ink); box-shadow:0 0 0 2px var(--ink), 0 12px 28px rgba(27,30,40,.12); }
+  .concept .check {
+    position:absolute; top:14px; right:14px; z-index:5; width:30px; height:30px; border-radius:50%;
+    border:2px solid rgba(255,255,255,.9); background:rgba(0,0,0,.25); backdrop-filter:blur(4px);
+    display:flex; align-items:center; justify-content:center; font-size:15px; color:transparent;
+  }
+  .concept.sel .check { background:var(--ink); border-color:#fff; color:#fff; }
+
+  .preview { height:400px; display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative; }
+
+  .meta { padding:18px 20px 20px; display:flex; flex-direction:column; gap:9px; border-top:1.5px solid var(--line); }
+  .meta .num { font-size:11px; font-weight:800; letter-spacing:.18em; color:var(--sub); }
+  .meta h3 { font-size:18px; font-weight:900; letter-spacing:-.01em; }
+  .meta .kw { font-size:12.5px; color:var(--sub); font-weight:600; }
+  .meta .fit { font-size:12.5px; color:#4B5563; line-height:1.65; background:var(--bg); border-radius:10px; padding:9px 12px; }
+  .meta .fit b { color:var(--ink); }
+  .chips { display:flex; gap:6px; }
+  .chip { width:22px; height:22px; border-radius:50%; box-shadow:inset 0 0 0 1px rgba(0,0,0,.12); }
+
+  /* ===== 미니 폰 공통 ===== */
+  .mini {
+    width:250px; height:520px; border-radius:32px; overflow:hidden; flex-shrink:0;
+    box-shadow:0 18px 40px rgba(0,0,0,.22); transform:scale(.72); transform-origin:center;
+    display:flex; flex-direction:column; font-size:12px; position:relative;
+  }
+  .m-body { flex:1; padding:14px; display:flex; flex-direction:column; gap:10px; overflow:hidden; }
+  .m-head { display:flex; align-items:center; justify-content:space-between; padding:14px 14px 0; }
+  .m-logo { font-weight:900; font-size:15px; letter-spacing:-.02em; }
+  .m-lv { font-size:10px; font-weight:800; padding:4px 9px; border-radius:999px; }
+  .m-greet { font-size:16.5px; font-weight:900; line-height:1.4; padding:6px 14px 0; }
+  .m-card { border-radius:14px; padding:12px; }
+  .m-route-t { font-size:12.5px; font-weight:800; }
+  .m-route-d { font-size:10px; margin-top:3px; opacity:.72; }
+  .m-prog { height:7px; border-radius:99px; margin-top:9px; overflow:hidden; }
+  .m-prog i { display:block; height:100%; width:25%; border-radius:99px; }
+  .m-stamps { display:flex; gap:8px; justify-content:space-between; }
+  .m-stamp { flex:1; aspect-ratio:1; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; }
+  .m-note { border-radius:12px; padding:9px 11px; font-size:10px; line-height:1.55; }
+  .m-nav { display:flex; margin-top:auto; padding:9px 6px 12px; }
+  .m-nav span { flex:1; text-align:center; font-size:9px; font-weight:700; }
+
+  /* ===== C1. 홍등 (차이나 레드 & 골드) ===== */
+  .c1 .preview { background:radial-gradient(280px 200px at 50% 0%, #7E1F1B, #4A100E); }
+  .c1 .mini { background:#FBF4E8; color:#3A1210; font-family:inherit; }
+  .c1 .m-head { background:linear-gradient(160deg,#B03028,#7E1F1B); padding-bottom:12px; }
+  .c1 .m-logo { color:#F7DFA8; } .c1 .m-logo::after { content:" 🏮"; font-size:11px; }
+  .c1 .m-lv { background:#F7DFA8; color:#7E1F1B; }
+  .c1 .m-greet { color:#5A1B17; }
+  .c1 .m-card { background:#fff; border:1.5px solid #EAD9BE; box-shadow:0 4px 12px rgba(126,31,27,.08); }
+  .c1 .m-route-t::before { content:"福 "; color:#B03028; }
+  .c1 .m-prog { background:#F3E2C8; } .c1 .m-prog i { background:linear-gradient(90deg,#B03028,#D8A237); }
+  .c1 .m-stamp { background:#fff; border:1.5px dashed #D8B98C; color:#C9B18C; }
+  .c1 .m-stamp.on { background:#B03028; border-style:solid; border-color:#8E241E; color:#F7DFA8; }
+  .c1 .m-note { background:#F7EBD3; color:#6B4A28; border-left:3px solid #D8A237; }
+  .c1 .m-nav { background:#7E1F1B; } .c1 .m-nav span { color:#E8B9A4; } .c1 .m-nav .on { color:#F7DFA8; }
+
+  /* ===== C2. 여권 스탬프 랠리 (레트로 페이퍼) ===== */
+  .c2 .preview { background:linear-gradient(160deg,#B9A88C,#8C7A5C); }
+  .c2 .mini { background:repeating-linear-gradient(0deg,#F4EDDE 0 26px, #EFE6D2 26px 27px); color:#3E3628; }
+  .c2 .m-head { border-bottom:2px dashed #C9BBA0; padding-bottom:10px; }
+  .c2 .m-logo { color:#2E4057; letter-spacing:.22em; font-size:13px; }
+  .c2 .m-logo::before { content:"✈ "; }
+  .c2 .m-lv { background:#2E4057; color:#F4EDDE; border-radius:3px; }
+  .c2 .m-greet { color:#2E4057; font-size:15px; }
+  .c2 .m-card { background:#FFFDF6; border:1.5px solid #D8CCB2; border-radius:6px; position:relative; }
+  .c2 .m-card::after { content:"VISA"; position:absolute; right:10px; top:10px; font-size:8px; letter-spacing:.3em;
+    color:#B9482D; border:1.5px solid #B9482D; padding:2px 5px; border-radius:2px; transform:rotate(8deg); opacity:.8; }
+  .c2 .m-prog { background:#E4D9C0; border-radius:2px; } .c2 .m-prog i { background:#B9482D; border-radius:2px; }
+  .c2 .m-stamp { background:#FFFDF6; border:1.6px dashed #B9AA88; border-radius:4px; color:#B9AA88; }
+  .c2 .m-stamp.on { border:2px solid #B9482D; color:#B9482D; border-radius:50%; transform:rotate(-10deg); background:transparent; font-weight:900; }
+  .c2 .m-note { background:#FFF9E8; border:1px solid #E4D9C0; color:#6B5F48; font-style:italic; }
+  .c2 .m-nav { border-top:2px dashed #C9BBA0; } .c2 .m-nav span { color:#8C7E62; } .c2 .m-nav .on { color:#B9482D; }
+
+  /* ===== C3. 네온 아케이드 (게임 HUD) ===== */
+  .c3 .preview { background:linear-gradient(160deg,#141830,#090B18); }
+  .c3 .mini { background:#0E1224; color:#E8ECFF; }
+  .c3 .m-head { padding-bottom:10px; }
+  .c3 .m-logo { color:#4DF0D2; text-shadow:0 0 12px rgba(77,240,210,.6); letter-spacing:.08em; }
+  .c3 .m-lv { background:rgba(77,240,210,.12); color:#4DF0D2; box-shadow:inset 0 0 0 1px #4DF0D2; }
+  .c3 .m-greet { color:#fff; }
+  .c3 .m-card { background:#171C36; box-shadow:inset 0 0 0 1.5px #2A3160, 0 0 18px rgba(255,77,157,.12); }
+  .c3 .m-route-t { color:#FF4D9D; } .c3 .m-route-t::before { content:"▶ "; font-size:9px; }
+  .c3 .m-prog { background:#232A52; } .c3 .m-prog i { background:linear-gradient(90deg,#4DF0D2,#FF4D9D); box-shadow:0 0 10px rgba(77,240,210,.8); }
+  .c3 .m-stamp { background:#171C36; box-shadow:inset 0 0 0 1.5px #2A3160; color:#3E4877; }
+  .c3 .m-stamp.on { box-shadow:inset 0 0 0 2px #4DF0D2, 0 0 14px rgba(77,240,210,.55); color:#4DF0D2; }
+  .c3 .m-note { background:rgba(255,77,157,.08); box-shadow:inset 0 0 0 1px rgba(255,77,157,.4); color:#FFB3D4; }
+  .c3 .m-nav { background:#0A0D1C; } .c3 .m-nav span { color:#3E4877; } .c3 .m-nav .on { color:#4DF0D2; text-shadow:0 0 8px rgba(77,240,210,.7); }
+
+  /* ===== C4. 클린 트래블 (모던 미니멀) ===== */
+  .c4 .preview { background:linear-gradient(160deg,#EDEFF3,#DFE3EA); }
+  .c4 .mini { background:#FFFFFF; color:#191D24; }
+  .c4 .m-head { padding-bottom:8px; }
+  .c4 .m-logo { color:#191D24; }
+  .c4 .m-lv { background:#F1F3F6; color:#E5484D; }
+  .c4 .m-greet { color:#191D24; letter-spacing:-.02em; }
+  .c4 .m-card { background:#F7F8FA; border-radius:18px; }
+  .c4 .m-route-t { color:#191D24; }
+  .c4 .m-prog { background:#E7EAEF; } .c4 .m-prog i { background:#E5484D; }
+  .c4 .m-stamp { background:#F7F8FA; color:#C3C9D4; }
+  .c4 .m-stamp.on { background:#E5484D; color:#fff; }
+  .c4 .m-note { background:#FFF5F5; color:#8A4A4C; }
+  .c4 .m-nav { border-top:1px solid #EDEFF3; } .c4 .m-nav span { color:#B6BDC9; } .c4 .m-nav .on { color:#191D24; }
+
+  /* ===== C5. 파스텔 탐험대 (일러스트 동화풍) ===== */
+  .c5 .preview { background:linear-gradient(160deg,#FFE8D6,#FFD3C0); }
+  .c5 .mini { background:linear-gradient(180deg,#FFF7EE, #FFEFE2); color:#4A3B33; }
+  .c5 .m-head { padding-bottom:8px; }
+  .c5 .m-logo { color:#F0763F; } .c5 .m-logo::after { content:" 🥟"; font-size:12px; }
+  .c5 .m-lv { background:#FFDFA8; color:#8A5A16; }
+  .c5 .m-greet { color:#5A4438; }
+  .c5 .m-card { background:#fff; border-radius:20px; box-shadow:0 6px 0 #F5DAC4; }
+  .c5 .m-route-t::before { content:"🍜 "; }
+  .c5 .m-prog { background:#FFE3CE; } .c5 .m-prog i { background:linear-gradient(90deg,#FFB25E,#F0763F); }
+  .c5 .m-stamp { background:#fff; box-shadow:0 4px 0 #F5DAC4; color:#E8C8AE; }
+  .c5 .m-stamp.on { background:#FFDFA8; box-shadow:0 4px 0 #E8B96E; color:#8A5A16; }
+  .c5 .m-note { background:#E6F4E4; color:#4C6B48; border-radius:16px; }
+  .c5 .m-nav { background:#fff; border-radius:20px 20px 0 0; box-shadow:0 -4px 14px rgba(240,118,63,.08); }
+  .c5 .m-nav span { color:#D3B9A4; } .c5 .m-nav .on { color:#F0763F; }
+
+  /* ===== 하단 바 & 모달 ===== */
+  .bar { position:fixed; left:0; right:0; bottom:0; z-index:50;
+    background:rgba(255,255,255,.96); border-top:1.5px solid var(--line);
+    backdrop-filter:blur(8px); padding:16px 24px; }
+  .bar-inner { max-width:1240px; margin:0 auto; display:flex; align-items:center; gap:16px; }
+  .bar .picked { font-size:15px; font-weight:800; }
+  .bar .picked em { font-style:normal; color:var(--red); }
+  .bar .hint { font-size:12.5px; color:var(--sub); }
+  .bar button { margin-left:auto; font-family:inherit; cursor:pointer; border:none;
+    background:var(--ink); color:#fff; font-size:15px; font-weight:800;
+    padding:14px 28px; border-radius:999px; }
+  .bar button:active { transform:scale(.97); }
+  .bar button[disabled] { background:#D1D5DB; cursor:not-allowed; }
+
+  .overlay { position:fixed; inset:0; background:rgba(20,22,30,.5); z-index:100;
+    display:none; align-items:center; justify-content:center; padding:24px; }
+  .overlay.show { display:flex; }
+  .modal { background:#fff; border-radius:22px; max-width:560px; width:100%; padding:30px; }
+  .modal h2 { font-size:21px; font-weight:900; margin-bottom:6px; }
+  .modal .msub { font-size:13.5px; color:var(--sub); line-height:1.7; margin-bottom:18px; }
+  .modal pre { background:var(--bg); border:1.5px solid var(--line); border-radius:14px;
+    padding:18px; font-size:13.5px; line-height:1.8; white-space:pre-wrap; font-family:inherit; color:#374151; }
+  .modal .actions { display:flex; gap:10px; margin-top:18px; }
+  .modal .actions button { flex:1; font-family:inherit; cursor:pointer; font-size:14.5px; font-weight:800;
+    padding:14px; border-radius:999px; border:none; }
+  .btn-copy { background:var(--red); color:#fff; }
+  .btn-close { background:var(--bg); color:var(--ink); border:1.5px solid var(--line) !important; }
+
+  @media (max-width:640px){ h1{font-size:24px;} .bar .hint{display:none;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="eyebrow">잡고 JABGO · 디자인 컨셉 인터뷰</span>
+    <h1>잡고, 어떤 얼굴로 만들까요?</h1>
+    <p class="lead">동일한 <b>홈 화면(오늘의 루트 · 진행도 · 스탬프 · 쪽지)</b>을 5가지 컨셉으로 입혀봤습니다.
+    미리보기를 비교해서 카드 하나를 고르고 <b>이 컨셉으로 진행</b>을 누르면, 해당 컨셉으로 MVP 전체 화면 목업을 제작합니다.</p>
+  </header>
+
+  <div class="grid">
+
+    <div class="concept c1" data-id="C1" data-name="홍등(紅燈) — 차이나 레드 & 골드">
+      <span class="check">✓</span>
+      <div class="preview">
+        <div class="mini">
+          <div class="m-head"><span class="m-logo">잡고</span><span class="m-lv">Lv.1 관광객</span></div>
+          <div class="m-greet">오늘은 어느 골목을<br>잡아볼까요?</div>
+          <div class="m-body">
+            <div class="m-card">
+              <div class="m-route-t">골목 미식 루트</div>
+              <div class="m-route-d">스폿 4개 · 도보 40분 · 진행 1/4</div>
+              <div class="m-prog"><i></i></div>
+            </div>
+            <div class="m-stamps">
+              <span class="m-stamp on">卍</span><span class="m-stamp">?</span><span class="m-stamp">?</span><span class="m-stamp">?</span>
+            </div>
+            <div class="m-note">💌 "화덕만두 골목, 오후 3시엔 줄이 없어요" — 어느 골목탐험가</div>
+            <div class="m-nav"><span class="on">홈</span><span>루트맵</span><span>컬렉션</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="meta">
+        <span class="num">CONCEPT 01</span>
+        <h3>홍등(紅燈) — 차이나 레드 & 골드</h3>
+        <span class="kw">#차이나타운정체성 #홍등 #금박 #전통×모던</span>
+        <div class="chips"><span class="chip" style="background:#B03028"></span><span class="chip" style="background:#7E1F1B"></span><span class="chip" style="background:#D8A237"></span><span class="chip" style="background:#FBF4E8"></span></div>
+        <div class="fit"><b>PRD 접점</b> · 장소성(차이나타운)을 그대로 브랜딩. 현장 배너·QR 포스터와 앱의 시각 언어가 자연스럽게 이어짐.</div>
+      </div>
+    </div>
+
+    <div class="concept c2" data-id="C2" data-name="여권 스탬프 랠리 — 레트로 페이퍼">
+      <span class="check">✓</span>
+      <div class="preview">
+        <div class="mini">
+          <div class="m-head"><span class="m-logo">JABGO</span><span class="m-lv">Lv.1 관광객</span></div>
+          <div class="m-greet">여행자의 여권에<br>도장을 모아보세요</div>
+          <div class="m-body">
+            <div class="m-card">
+              <div class="m-route-t">골목 미식 루트</div>
+              <div class="m-route-d">스폿 4개 · 도보 40분 · 진행 1/4</div>
+              <div class="m-prog"><i></i></div>
+            </div>
+            <div class="m-stamps">
+              <span class="m-stamp on">合</span><span class="m-stamp">?</span><span class="m-stamp">?</span><span class="m-stamp">?</span>
+            </div>
+            <div class="m-note">💌 "화덕만두 골목, 오후 3시엔 줄이 없어요" — 어느 골목탐험가</div>
+            <div class="m-nav"><span class="on">여권</span><span>루트맵</span><span>컬렉션</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="meta">
+        <span class="num">CONCEPT 02</span>
+        <h3>여권 스탬프 랠리 — 레트로 페이퍼</h3>
+        <span class="kw">#여권 #도장 #아날로그종이질감 #빈티지여행</span>
+        <div class="chips"><span class="chip" style="background:#F4EDDE"></span><span class="chip" style="background:#2E4057"></span><span class="chip" style="background:#B9482D"></span><span class="chip" style="background:#B9AA88"></span></div>
+        <div class="fit"><b>PRD 접점</b> · '스탬프 수집' 본질을 은유 그대로 시각화. 완주 결과 카드가 "여권 한 페이지"가 되어 공유 욕구 자극.</div>
+      </div>
+    </div>
+
+    <div class="concept c3" data-id="C3" data-name="네온 아케이드 — 게임 HUD">
+      <span class="check">✓</span>
+      <div class="preview">
+        <div class="mini">
+          <div class="m-head"><span class="m-logo">JABGO</span><span class="m-lv">LV.1 관광객</span></div>
+          <div class="m-greet">QUEST START!<br>골목을 공략하라</div>
+          <div class="m-body">
+            <div class="m-card">
+              <div class="m-route-t">골목 미식 루트</div>
+              <div class="m-route-d">SPOT 4 · 도보 40분 · CLEAR 1/4</div>
+              <div class="m-prog"><i></i></div>
+            </div>
+            <div class="m-stamps">
+              <span class="m-stamp on">★</span><span class="m-stamp">?</span><span class="m-stamp">?</span><span class="m-stamp">?</span>
+            </div>
+            <div class="m-note">💌 "화덕만두 골목, 오후 3시엔 줄이 없어요" — 어느 골목탐험가</div>
+            <div class="m-nav"><span class="on">HOME</span><span>MAP</span><span>BADGE</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="meta">
+        <span class="num">CONCEPT 03</span>
+        <h3>네온 아케이드 — 게임 HUD</h3>
+        <span class="kw">#다크모드 #네온 #XP게이지 #아케이드감성</span>
+        <div class="chips"><span class="chip" style="background:#0E1224"></span><span class="chip" style="background:#4DF0D2"></span><span class="chip" style="background:#FF4D9D"></span><span class="chip" style="background:#171C36"></span></div>
+        <div class="fit"><b>PRD 접점</b> · '하루 안에 완결되는 레벨'(F-3)의 게임성을 극대화. 레벨업·스탬프 연출이 가장 화려하게 살아나는 컨셉.</div>
+      </div>
+    </div>
+
+    <div class="concept c4" data-id="C4" data-name="클린 트래블 — 모던 미니멀">
+      <span class="check">✓</span>
+      <div class="preview">
+        <div class="mini">
+          <div class="m-head"><span class="m-logo">잡고</span><span class="m-lv">Lv.1 관광객</span></div>
+          <div class="m-greet">오늘의 루트를<br>시작해 볼까요?</div>
+          <div class="m-body">
+            <div class="m-card">
+              <div class="m-route-t">골목 미식 루트</div>
+              <div class="m-route-d">스폿 4개 · 도보 40분 · 진행 1/4</div>
+              <div class="m-prog"><i></i></div>
+            </div>
+            <div class="m-stamps">
+              <span class="m-stamp on">✓</span><span class="m-stamp">·</span><span class="m-stamp">·</span><span class="m-stamp">·</span>
+            </div>
+            <div class="m-note">💌 "화덕만두 골목, 오후 3시엔 줄이 없어요" — 어느 골목탐험가</div>
+            <div class="m-nav"><span class="on">홈</span><span>루트맵</span><span>컬렉션</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="meta">
+        <span class="num">CONCEPT 04</span>
+        <h3>클린 트래블 — 모던 미니멀</h3>
+        <span class="kw">#화이트베이스 #원포인트레드 #토스결 #신뢰감</span>
+        <div class="chips"><span class="chip" style="background:#FFFFFF"></span><span class="chip" style="background:#191D24"></span><span class="chip" style="background:#E5484D"></span><span class="chip" style="background:#F7F8FA"></span></div>
+        <div class="fit"><b>PRD 접점</b> · '앱 설치 의향 없는 1회성 관광객'에게 학습 비용 0의 익숙한 UI. 첫 진입(QR→웹) 이탈 최소화에 유리.</div>
+      </div>
+    </div>
+
+    <div class="concept c5" data-id="C5" data-name="파스텔 탐험대 — 일러스트 동화풍">
+      <span class="check">✓</span>
+      <div class="preview">
+        <div class="mini">
+          <div class="m-head"><span class="m-logo">잡고</span><span class="m-lv">Lv.1 관광객</span></div>
+          <div class="m-greet">냠냠, 골목 탐험<br>떠나볼까요?</div>
+          <div class="m-body">
+            <div class="m-card">
+              <div class="m-route-t">골목 미식 루트</div>
+              <div class="m-route-d">스폿 4개 · 도보 40분 · 진행 1/4</div>
+              <div class="m-prog"><i></i></div>
+            </div>
+            <div class="m-stamps">
+              <span class="m-stamp on">🥟</span><span class="m-stamp">?</span><span class="m-stamp">?</span><span class="m-stamp">?</span>
+            </div>
+            <div class="m-note">💌 "화덕만두 골목, 오후 3시엔 줄이 없어요" — 어느 골목탐험가</div>
+            <div class="m-nav"><span class="on">홈</span><span>루트맵</span><span>컬렉션</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="meta">
+        <span class="num">CONCEPT 05</span>
+        <h3>파스텔 탐험대 — 일러스트 동화풍</h3>
+        <span class="kw">#파스텔 #말랑말랑 #캐릭터확장성 #친근함</span>
+        <div class="chips"><span class="chip" style="background:#FFF7EE"></span><span class="chip" style="background:#F0763F"></span><span class="chip" style="background:#FFDFA8"></span><span class="chip" style="background:#E6F4E4"></span></div>
+        <div class="fit"><b>PRD 접점</b> · 뱃지·칭호(산책자→골목탐험가→통)를 캐릭터/스티커로 확장하기 최적. 커플·가족 방문객의 수집 욕구 자극.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="bar">
+  <div class="bar-inner">
+    <span class="picked" id="picked">컨셉을 선택해주세요</span>
+    <span class="hint">카드 하나를 고르면 해당 컨셉으로 MVP 전체 화면 목업을 만듭니다</span>
+    <button id="btn-done" disabled>이 컨셉으로 진행</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2>선택하신 디자인 컨셉</h2>
+    <p class="msub">아래 내용을 복사해 대화에 붙여넣으면 이 컨셉으로 잡고 MVP 화면 목업 제작을 시작합니다.</p>
+    <pre id="result"></pre>
+    <div class="actions">
+      <button class="btn-copy" id="btn-copy">📋 복사하기</button>
+      <button class="btn-close" id="btn-close">다시 고르기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var current = null;
+
+  document.addEventListener("click", function (e) {
+    var card = e.target.closest(".concept");
+    if (card) {
+      document.querySelectorAll(".concept").forEach(function (c) { c.classList.remove("sel"); });
+      card.classList.add("sel");
+      current = { id: card.getAttribute("data-id"), name: card.getAttribute("data-name") };
+      document.getElementById("picked").innerHTML = '선택: <em>' + current.id + '. ' + current.name + '</em>';
+      document.getElementById("btn-done").disabled = false;
+      return;
+    }
+
+    if (e.target.id === "btn-done" && current) {
+      document.getElementById("result").textContent =
+        "[잡고 디자인 컨셉 선택]\n" + current.id + ". " + current.name + "\n\n→ 이 컨셉으로 잡고 MVP 전체 화면 목업을 진행해줘.";
+      document.getElementById("overlay").classList.add("show");
+      return;
+    }
+    if (e.target.id === "btn-close" || e.target.id === "overlay") {
+      document.getElementById("overlay").classList.remove("show");
+      return;
+    }
+    if (e.target.id === "btn-copy") {
+      var txt = document.getElementById("result").textContent;
+      var btn = e.target;
+      function ok() { btn.textContent = "✅ 복사됨!"; setTimeout(function(){ btn.textContent = "📋 복사하기"; }, 1600); }
+      function fallback() {
+        var r = document.createRange();
+        r.selectNodeContents(document.getElementById("result"));
+        var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+        try { document.execCommand("copy"); ok(); } catch (err) {}
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt).then(ok, fallback);
+      } else { fallback(); }
+      return;
+    }
+  });
+})();
+</script>
+</body>
+</html>
